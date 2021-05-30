@@ -31,6 +31,7 @@ setup(
             "ruamel.yaml",
             "cloudpickle",
             "lz4",
+            "cryptography"
         ],
     },
     keywords = [
