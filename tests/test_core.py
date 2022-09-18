@@ -251,6 +251,11 @@ def test_pascalstring():
         raises(PascalString(Byte, e).sizeof) == SizeofError
         raises(PascalString(VarInt, e).sizeof) == SizeofError
 
+def test_pascalstring_issue_960():
+    d = Select(PascalString(Byte, "ascii"))
+    assert raises(d.parse, b"\x01\xff") == SelectError
+    assert raises(d.build, u"Афон") == SelectError
+
 def test_cstring():
     for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
         s = u"Афон"

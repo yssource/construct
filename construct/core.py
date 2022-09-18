@@ -3739,7 +3739,7 @@ class Select(Construct):
                 obj = sc._parsereport(stream, context, path)
             except ExplicitError:
                 raise
-            except ConstructError:
+            except Exception:
                 stream_seek(stream, fallback, 0, path)
             else:
                 return obj
@@ -4704,10 +4704,6 @@ class Prefixed(Subconstruct):
         if self.includelength:
             length -= self.lengthfield._sizeof(context, path)
         data = stream_read(stream, length, path)
-        if self.subcon is GreedyBytes:
-            return data
-        if type(self.subcon) is GreedyString:
-            return data.decode(self.subcon.encoding)
         return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
@@ -4830,10 +4826,6 @@ class FixedSized(Subconstruct):
         if length < 0:
             raise PaddingError("length cannot be negative", path=path)
         data = stream_read(stream, length, path)
-        if self.subcon is GreedyBytes:
-            return data
-        if type(self.subcon) is GreedyString:
-            return data.decode(self.subcon.encoding)
         return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
@@ -4918,10 +4910,6 @@ class NullTerminated(Subconstruct):
                     stream_seek(stream, -unit, 1, path)
                 break
             data += b
-        if self.subcon is GreedyBytes:
-            return data
-        if type(self.subcon) is GreedyString:
-            return data.decode(self.subcon.encoding)
         return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
@@ -4980,10 +4968,6 @@ class NullStripped(Subconstruct):
             while end-unit >= 0 and data[end-unit:end] == pad:
                 end -= unit
             data = data[:end]
-        if self.subcon is GreedyBytes:
-            return data
-        if type(self.subcon) is GreedyString:
-            return data.decode(self.subcon.encoding)
         return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
@@ -5100,10 +5084,6 @@ class Transformed(Subconstruct):
         if isinstance(self.decodeamount, integertypes):
             data = stream_read(stream, self.decodeamount, path)
         data = self.decodefunc(data)
-        if self.subcon is GreedyBytes:
-            return data
-        if type(self.subcon) is GreedyString:
-            return data.decode(self.subcon.encoding)
         return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
@@ -5219,10 +5199,6 @@ class ProcessXor(Subconstruct):
         if isinstance(pad, bytestringtype):
             if not (len(pad) <= 64 and pad == bytes(len(pad))):
                 data = integers2bytes( (b ^ p) for b,p in zip(data, itertools.cycle(pad)) )
-        if self.subcon is GreedyBytes:
-            return data
-        if type(self.subcon) is GreedyString:
-            return data.decode(self.subcon.encoding)
         return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
@@ -5315,10 +5291,6 @@ class ProcessRotateLeft(Subconstruct):
             indices_pairs = [ ((i+amount_bytes) % group, (i+1+amount_bytes) % group) for i in range(group)]
             data = integers2bytes( (data_ints[i+k1] << amount1) & 0xff | (data_ints[i+k2] >> amount2) for i in range(0,len(data),group) for k1,k2 in indices_pairs )
 
-        if self.subcon is GreedyBytes:
-            return data
-        if type(self.subcon) is GreedyString:
-            return data.decode(self.subcon.encoding)
         return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
