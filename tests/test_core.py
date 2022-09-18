@@ -1328,6 +1328,11 @@ def test_lazy():
     assert d.build(x) == b'\x00'
     assert d.sizeof() == 1
 
+def test_lazy_issue_938():
+    d = Lazy(Prefixed(Byte, Byte))
+    func = d.parse(b'\x01\x02')
+    assert func() == 2
+
 def test_lazy_seek():
     d = Struct(
         "a" / Int8ub,
