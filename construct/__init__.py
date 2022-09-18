@@ -128,6 +128,7 @@ __all__ = [
     'Numpy',
     'obj_',
     'Octet',
+    'OffsettedEnd',
     'OneOf',
     'Optional',
     'Padded',

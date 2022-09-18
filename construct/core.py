@@ -4391,6 +4391,52 @@ class Peek(Subconstruct):
         return "obj"
 
 
+class OffsettedEnd(Subconstruct):
+    r"""
+    Parses all bytes in the stream till `EOF plus a negative endoffset` is reached.
+
+    This is useful when GreedyBytes (or any other greedy construct) is followed by a fixed-size footer.
+
+    Parsing determines the length of the stream and reads all bytes till EOF plus `endoffset` is reached, then defers to subcon using new BytesIO with said bytes. Building defers to subcon as-is. Size is undefined.
+
+    :param endoffset: integer or context lambda, only negative offsets or zero are allowed
+    :param subcon: Construct instance
+
+    :raises StreamError: could not read enough bytes
+    :raises StreamError: reads behind the stream (if endoffset is positive)
+
+    Example::
+
+        >>> d = Struct(
+        ...     "header" / Bytes(2),
+        ...     "data" / OffsettedEnd(-2, GreedyBytes),
+        ...     "footer" / Bytes(2),
+        ... )
+        >>> d.parse(b"\x01\x02\x03\x04\x05\x06\x07")
+        Container(header=b'\x01\x02', data=b'\x03\x04\x05', footer=b'\x06\x07')
+    """
+
+    def __init__(self, endoffset, subcon):
+        super().__init__(subcon)
+        self.endoffset = endoffset
+
+    def _parse(self, stream, context, path):
+        endoffset = evaluate(self.endoffset, context)
+        curpos = stream_tell(stream, path)
+        stream_seek(stream, 0, 2, path)
+        endpos = stream_tell(stream, path)
+        stream_seek(stream, curpos, 0, path)
+        length = endpos + endoffset - curpos
+        data = stream_read(stream, length, path)
+        return self.subcon._parsereport(io.BytesIO(data), context, path)
+
+    def _build(self, obj, stream, context, path):
+        return self.subcon._build(obj, stream, context, path)
+
+    def _sizeof(self, context, path):
+        raise SizeofError(path=path)
+
+
 class Seek(Construct):
     r"""
     Seeks the stream.

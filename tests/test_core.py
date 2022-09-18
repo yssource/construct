@@ -958,6 +958,17 @@ def test_peek():
     d.build(Container(a=0x01, b=0x0102)) == b"\x01\x02"
     d.sizeof() == 0
 
+def test_offsettedend():
+    d = Struct(
+        "header" / Bytes(2),
+        "data" / OffsettedEnd(-2, GreedyBytes),
+        "footer" / Bytes(2),
+    )
+    common(d, b"\x01\x02\x03\x04\x05\x06\x07", Container(header=b'\x01\x02', data=b'\x03\x04\x05', footer=b'\x06\x07'))
+
+    d = OffsettedEnd(0, Byte)
+    assert raises(d.sizeof) == SizeofError
+
 def test_seek():
     d = Seek(5)
     assert d.parse(b"") == 5
