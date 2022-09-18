@@ -5541,9 +5541,9 @@ class EncryptedSym(Tunnel):
 
     Parsing and building transforms all bytes using the selected cipher. Since data is processed until EOF, it behaves similar to `GreedyBytes`. Size is undefined.
 
-    The key for encryption / decryption should be passed via `contextkw` to `build` / `parse`.
+    The key for encryption and decryption should be passed via `contextkw` to `build` and `parse` methods.
 
-    This construct is heavily based on the `cryptography` library, which supports the following algorithms / modes. For more details please see the documentation of that library.
+    This construct is heavily based on the `cryptography` library, which supports the following algorithms and modes. For more details please see the documentation of that library.
     
     Algorithms:
     - AES
@@ -5566,8 +5566,8 @@ class EncryptedSym(Tunnel):
     - XTS
     - ECB (insecure)
 
-    .. note:: Keep in mind that some of the algorithms require padding of the data. This can be done e.g. with :class:`~construct.core.Aligned`
-    .. note:: For GCM mode use :class:`~construct.core.EncryptedSymAead`
+    .. note:: Keep in mind that some of the algorithms require padding of the data. This can be done e.g. with :class:`~construct.core.Aligned`.
+    .. note:: For GCM mode use :class:`~construct.core.EncryptedSymAead`.
 
     :param subcon: Construct instance, subcon used for storing the value
     :param cipher: Cipher object or context lambda from cryptography.hazmat.primitives.ciphers
@@ -5588,7 +5588,7 @@ class EncryptedSym(Tunnel):
         ...         Aligned(16,
         ...             Struct(
         ...                 "width" / Int16ul,
-        ...                 "height" / Int16ul
+        ...                 "height" / Int16ul,
         ...             )
         ...         ),
         ...         lambda ctx: Cipher(algorithms.AES(ctx._.key), modes.CBC(ctx.iv))
@@ -5606,6 +5606,7 @@ class EncryptedSym(Tunnel):
    """
 
     def __init__(self, subcon, cipher):
+        import cryptography
         super().__init__(subcon)
         self.cipher = cipher
 
@@ -5613,9 +5614,9 @@ class EncryptedSym(Tunnel):
         from cryptography.hazmat.primitives.ciphers import Cipher, modes
         cipher = evaluate(self.cipher, context)
         if not isinstance(cipher, Cipher):
-            raise CipherError(f"cipher {repr(cipher)} is no cryptography.hazmat.primitives.ciphers.Cipher object", path=path)
+            raise CipherError(f"cipher {repr(cipher)} is not a cryptography.hazmat.primitives.ciphers.Cipher object", path=path)
         if isinstance(cipher.mode, modes.GCM):
-            raise CipherError(f"AEAD cipher not supported", path=path)
+            raise CipherError(f"AEAD cipher is not supported in this class, use EncryptedSymAead", path=path)
         return cipher
 
     def _decode(self, data, context, path):
@@ -5635,7 +5636,7 @@ class EncryptedSymAead(Tunnel):
 
     Parsing and building transforms all bytes using the selected cipher and also authenticates the `associated_data`. Since data is processed until EOF, it behaves similar to `GreedyBytes`. Size is undefined.
 
-    The key for encryption / decryption should be passed via `contextkw` to `build` / `parse`.
+    The key for encryption and decryption should be passed via `contextkw` to `build` and `parse` methods.
 
     This construct is heavily based on the `cryptography` library, which supports the following AEAD ciphers. For more details please see the documentation of that library.
     

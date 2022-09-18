@@ -43,3 +43,5 @@ Lazy class fixed, seeks the not-yet parsed subcon
 BytesInteger BitsInteger cannot process zero length anymore
 
 OffsettedEnd class added in streaming category
+
+EncryptedSym EncryptedSymAead classes were added in tunneling category
