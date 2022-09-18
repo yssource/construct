@@ -140,7 +140,8 @@ def test_formatfield_bool_issue_901():
 
 def test_bytesinteger():
     d = BytesInteger(0)
-    common(d, b"", 0, 0)
+    assert raises(d.parse, b"") == IntegerError
+    assert raises(d.build, 0) == IntegerError
     d = BytesInteger(4, signed=True, swapped=False)
     common(d, b"\x01\x02\x03\x04", 0x01020304, 4)
     common(d, b"\xff\xff\xff\xff", -1, 4)
@@ -159,7 +160,8 @@ def test_bytesinteger():
 
 def test_bitsinteger():
     d = BitsInteger(0)
-    common(d, b"", 0, 0)
+    assert raises(d.parse, b"") == IntegerError
+    assert raises(d.build, 0) == IntegerError
     d = BitsInteger(8)
     common(d, b"\x01\x01\x01\x01\x01\x01\x01\x01", 255, 8)
     d = BitsInteger(8, signed=True)

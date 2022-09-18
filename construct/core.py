@@ -1101,7 +1101,7 @@ class BytesInteger(Construct):
     :param swapped: bool or context lambda, whether to swap byte order (little endian), default is False (big endian)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises IntegerError: length is negative
+    :raises IntegerError: length is negative or zero
     :raises IntegerError: value is not an integer
     :raises IntegerError: number does not fit given width and signed parameters
 
@@ -1126,8 +1126,8 @@ class BytesInteger(Construct):
 
     def _parse(self, stream, context, path):
         length = evaluate(self.length, context)
-        if length < 0:
-            raise IntegerError(f"length {length} must be non-negative", path=path)
+        if length <= 0:
+            raise IntegerError(f"length {length} must be positive", path=path)
         data = stream_read(stream, length, path)
         if evaluate(self.swapped, context):
             data = swapbytes(data)
@@ -1139,11 +1139,9 @@ class BytesInteger(Construct):
     def _build(self, obj, stream, context, path):
         if not isinstance(obj, integertypes):
             raise IntegerError(f"value {obj} is not an integer", path=path)
-        if obj < 0 and not self.signed:
-            raise IntegerError(f"value {obj} is negative but signed is false", path=path)
         length = evaluate(self.length, context)
-        if length < 0:
-            raise IntegerError(f"length {length} must be non-negative", path=path)
+        if length <= 0:
+            raise IntegerError(f"length {length} must be positive", path=path)
         try:
             data = integer2bytes(obj, length, self.signed)
         except ValueError as e:
@@ -1199,7 +1197,7 @@ class BitsInteger(Construct):
     :param swapped: bool or context lambda, whether to swap byte order (little endian), default is False (big endian)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises IntegerError: length is negative
+    :raises IntegerError: length is negative or zero
     :raises IntegerError: value is not an integer
     :raises IntegerError: number does not fit given width and signed parameters
     :raises IntegerError: little-endianness selected but length is not multiple of 8 bits
@@ -1246,14 +1244,12 @@ class BitsInteger(Construct):
 
     def _parse(self, stream, context, path):
         length = evaluate(self.length, context)
-        if length < 0:
-            raise IntegerError(f"length {length} must be non-negative", path=path)
+        if length <= 0:
+            raise IntegerError(f"length {length} must be positive", path=path)
         data = stream_read(stream, length, path)
-        if evaluate(self.swapped, context):
-            if length % 8:
-                raise IntegerError(f"little-endianness is only defined if {length} is multiple of 8 bits", path=path)
-            data = swapbytesinbits(data)
         try:
+            if evaluate(self.swapped, context):
+                data = swapbytesinbits(data)
             return bits2integer(data, self.signed)
         except ValueError as e:
             raise IntegerError(str(e), path=path)
@@ -1261,19 +1257,15 @@ class BitsInteger(Construct):
     def _build(self, obj, stream, context, path):
         if not isinstance(obj, integertypes):
             raise IntegerError(f"value {obj} is not an integer", path=path)
-        if obj < 0 and not self.signed:
-            raise IntegerError(f"value {obj} is negative but signed is false", path=path)
         length = evaluate(self.length, context)
-        if length < 0:
-            raise IntegerError(f"length {length} must be non-negative", path=path)
+        if length <= 0:
+            raise IntegerError(f"length {length} must be positive", path=path)
         try:
             data = integer2bits(obj, length, self.signed)
+            if evaluate(self.swapped, context):
+                data = swapbytesinbits(data)
         except ValueError as e:
             raise IntegerError(str(e), path=path)
-        if evaluate(self.swapped, context):
-            if length % 8:
-                raise IntegerError(f"little-endianness is only defined if {length} is multiple of 8 bits", path=path)
-            data = swapbytesinbits(data)
         stream_write(stream, data, length, path)
         return obj
 
@@ -1541,7 +1533,7 @@ class ZigZag(Construct):
     r"""
     ZigZag encoded signed integer. This is a variant of VarInt encoding that also can encode negative numbers. Scheme is defined at Google site related to `Protocol Buffers <https://developers.google.com/protocol-buffers/docs/encoding>`_.
 
-    Can encode negative numbers.
+    Can also encode negative numbers.
 
     Parses into an integer. Builds from an integer. Size is undefined.
 
