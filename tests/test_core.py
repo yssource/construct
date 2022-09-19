@@ -2369,3 +2369,14 @@ def test_switch_issue_913_using_integers():
     common(d, b"", None, 0, x=0)
     common(d, b"\xab", 171, 1, x=1)
     common(d, b"\x09\x00", 9, 2, x=2)
+
+@xfail(reason="unfixable defect in the design")
+def test_adapters_context_issue_954():
+    class IdAdapter(Adapter):
+        def _decode(self, obj, context, path):
+            return obj
+        def _encode(self, obj, context, path):
+            return obj
+    IdentityAdapter = IdAdapter(Rebuild(Int16ub, len_(this.data)))
+    TestStruct = Struct("len" / IdentityAdapter, "data" / Bytes(this.len))
+    TestStruct.build({"data": b"123456"})
