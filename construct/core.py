@@ -216,17 +216,23 @@ def stream_tell(stream, path):
 
 
 def stream_size(stream):
-    fallback = stream.tell()
-    end = stream.seek(0, 2)
-    stream.seek(fallback)
-    return end
+    try:
+        fallback = stream.tell()
+        end = stream.seek(0, 2)
+        stream.seek(fallback)
+        return end
+    except Exception:
+        raise StreamError("stream. seek() tell() failed", path="???")
 
 
 def stream_iseof(stream):
-    fallback = stream.tell()
-    data = stream.read(1)
-    stream.seek(fallback)
-    return not data
+    try:
+        fallback = stream.tell()
+        data = stream.read(1)
+        stream.seek(fallback)
+        return not data
+    except Exception:
+        raise StreamError("stream. read() seek() tell() failed", path="???")
 
 
 class CodeGen:
